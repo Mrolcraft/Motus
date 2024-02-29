@@ -3,9 +3,9 @@ version: '3.8'
 services:
   motus1:
     build:
-      context: .
+      context: ./motus/.
       dockerfile: Dockerfile
-    container_name: "motus1"# Utilisation d'une variable d'environnement pour le port
+    container_name: "motus1" # Utilisation d'une variable d'environnement pour le port
     ports:
       - "3005:3005"
     volumes:
@@ -15,7 +15,7 @@ services:
 
   motus2:
     build:
-      context: .
+      context: ./motus/.
       dockerfile: Dockerfile
     container_name: "motus2" # Utilisation d'une variable d'environnement pour le port
     ports:
@@ -37,7 +37,7 @@ services:
     depends_on:
       - redis
     build:
-      context: ../score-motus/.
+      context: ./score-motus/.
       dockerfile: Dockerfile
     container_name: "score"
     ports:
@@ -52,7 +52,7 @@ services:
       - motus1
       - motus2
     build:
-      context: ../haproxy
+      context: ./haproxy/.
       dockerfile: Dockerfile
     container_name: "haproxy-container"
     ports:
