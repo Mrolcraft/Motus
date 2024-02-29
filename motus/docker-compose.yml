@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  motus1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: "motus1"# Utilisation d'une variable d'environnement pour le port
+    ports:
+      - "3005:3005"
+    volumes:
+      - motus_data1:/data
+    environment:
+      - PORT=3005  # Définir la variable d'environnement PORT avec une valeur par défaut
+
+  motus2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: "motus2" # Utilisation d'une variable d'environnement pour le port
+    ports:
+      - "3006:3006"
+    volumes:
+      - motus_data2:/data
+    environment:
+      - PORT=3006  # Définir la variable d'environnement PORT avec une valeur par défaut
+  
+  redis:
+    image: "redis:latest"
+    container_name: "redis"
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      
+  score:
+    depends_on:
+      - redis
+    build:
+      context: ../score-motus/.
+      dockerfile: Dockerfile
+    container_name: "score"
+    ports:
+      - "3007:3007"
+    volumes:
+      - score_motus_data:/data
+    environment:
+      - PORT=3007
+  
+  haproxy:
+    depends_on:
+      - motus1
+      - motus2
+    build:
+      context: ../haproxy
+      dockerfile: Dockerfile
+    container_name: "haproxy-container"
+    ports:
+      - "3100:3100"
+      - "9090:9090"
+
+volumes:
+  motus_data1:
+  motus_data2:
+  score_motus_data:
+  redis_data:

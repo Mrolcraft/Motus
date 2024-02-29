@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Motus</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    </head>
+    <body>
+        <div class="container">
+            <h1>Motus</h1>
+            <p>Le jeu du motus</p>
+            <div class="form-group">
+                <label for="word">Mot à trouver</label>
+                <input type="text" class="form-control" id="word" name="word" required="">
+                <input type="submit" class="btn btn-primary" id="submit" name="submit" value="Envoyer">
+                <a href="/score"><button class="btn btn-primary">Voir votre score</button></a>
+            </div>
+            <div id="result">
+                <p id="word_result"></p>
+            </div>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script type="text/javascript">
+        $(document).ready(function() {
+            $('#submit').click(function() {
+                var word = $('#word').val();
+                if (word.length === 0) {
+                    return;
+                }
+                $.ajax({
+                    url: '/word',
+                    type: 'GET',
+                    data: {
+                        word: word
+                    },
+                    success: function(response) {
+                        var result = JSON.parse(response);
+                        $('#word_result').append('<br>');
+                        for (var i = 0; i < result.colors.length; i++) {
+                            $('#word_result').append('<span style="color:' + result.colors[i] + '">' + word[i] + '</span>');
+                        }
+                        $('#word').val('');
+                    }
+                });
+            });
+        });
+        </script>
+    </body>
+</html>
