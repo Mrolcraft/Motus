@@ -25,17 +25,25 @@ services:
     environment:
       - PORT=3006  # Définir la variable d'environnement PORT avec une valeur par défaut
   
-  redis:
+  redis_score:
     image: "redis:latest"
-    container_name: "redis"
+    container_name: "redis_score"
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - redis_data_score:/data
+
+  redis_auth:
+    image: "redis:latest"
+    container_name: "redis_auth"
+    ports:
+      - "6378:6379"
+    volumes:
+      - redis_data_auth:/data
 
   score1:
     depends_on:
-      - redis
+      - redis_score
     build:
       context: ./score-motus/.
       dockerfile: Dockerfile
@@ -49,7 +57,7 @@ services:
 
   score2:
     depends_on:
-      - redis
+      - redis_score
     build:
       context: ./score-motus/.
       dockerfile: Dockerfile
@@ -60,7 +68,36 @@ services:
       - score_motus_data2:/data
     environment:
       - PORT=3009
+
+  auth1:
+    depends_on:
+      - redis_auth
+    build:
+      context: ./motus-auth/.
+      dockerfile: Dockerfile
+    container_name: "auth1"
+    ports:
+      - "3011:3011"
+    volumes:
+      - motus_auth1:/data
+    environment:
+      - PORT=3011
   
+  auth2:
+    depends_on:
+      - redis_auth
+    build:
+      context: ./motus-auth/.
+      dockerfile: Dockerfile
+    container_name: "auth2"
+    ports:
+      - "3012:3012"
+    volumes:
+      - motus_auth2:/data
+    environment:
+      - PORT=3012
+
+
   haproxy:
     depends_on:
       - motus1
@@ -72,6 +109,7 @@ services:
     ports:
       - "3100:3100"
       - "3007:3007"
+      - "3010:3010"
       - "9090:9090"
 
 volumes:
@@ -79,4 +117,7 @@ volumes:
   motus_data2:
   score_motus_data1:
   score_motus_data2:
-  redis_data:
+  motus_auth1:
+  motus_auth2:
+  redis_data_score:
+  redis_data_auth:

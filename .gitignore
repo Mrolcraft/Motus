@@ -3,3 +3,4 @@ motus/.env
 motus/.idea
 motus/node_modules
 score-motus/node_modules
+motus-auth/node_modules

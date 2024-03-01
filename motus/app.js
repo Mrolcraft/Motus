@@ -4,12 +4,22 @@ const app = express()
 const path = require('path')
 const os = require('os')
 const axios = require('axios')
+const session = require('express-session')
 const port = process.env.PORT || 3000
 
 app.set('view engine', 'ejs');
 
 // Define the directory where your HTML files (views) are located
 app.set('views', path.join(__dirname, 'views'));
+
+app.set('trust proxy', 1) // trust first proxy
+app.use(session({
+    secret: 'CY-Tech top 10 écoles post-bac',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }
+}))
+
 const words = fs.readFileSync('./data/liste_francais_utf8.txt').toString().split("\n");
 
 function padTo2Digits(num) {
@@ -44,7 +54,11 @@ function getCache() {
 }
 
 app.get('/', (req, res) => {
-    res.render('index')
+    if(!req.session.user) {
+        res.redirect('/signup')
+    } else {
+        res.render('index')
+    }
 })
 
 app.get('/length', (req, res) => {
@@ -97,6 +111,58 @@ app.get('/word' , async (req, res) => {
     }
     await updateDB(req.socket.remoteAddress, "add_try")
     res.send(JSON.stringify({colors: colors}))
+})
+
+app.get('/signup', (req, res) => {
+    res.render('login')
+})
+
+app.get('/signin', (req, res) => {
+    res.render('signin')
+})
+
+app.get('/signup_process', async (req, res) => {
+    const email = req.query.email
+    const password = req.query.password
+
+    const result = await axios.post("http://haproxy:3010/signup", {"email": email, "password": password})
+
+    if(result.data.state === "success") {
+        req.session.user = email
+        await req.session.save()
+        res.redirect('/')
+    } else {
+        res.render('error', {erreur: result.data.message})
+    }
+})
+
+app.get('/signin_process', async (req, res) => {
+    const email = req.query.email
+    const password = req.query.password
+    const password2 = req.query.password2
+    if(password !== password2) {
+        res.render('error', {erreur: "Les mots de passes sont différents"})
+    }
+
+    const result = await axios.post("http://haproxy:3010/signin", {"email": email, "password": password})
+
+    if(result.data.state === "success") {
+        req.session.user = email
+        await req.session.save()
+        res.redirect('/')
+    } else {
+        res.render('error', {erreur: result.data.message})
+    }
+})
+
+app.get('/session', (req, res) => {
+    res.send(req.session)
+})
+
+app.get('/logout', async (req, res) => {
+    req.session.user = null
+    await req.session.save()
+    res.redirect('/')
 })
 
 app.get('/port', (req, res) => {
