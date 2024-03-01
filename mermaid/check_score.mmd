@@ -1,0 +1,15 @@
+sequenceDiagram
+    actor User
+    participant haproxy
+    box motus app 
+    participant Motus 
+    participant score
+    end
+    User->>+haproxy: Je veux jouer à Motus
+    haproxy->>-User: Voici un serveur Motus disponible
+    User ->>+Motus:J'aimerais voir mon score
+    Motus ->>-User: Ok, c'est là bas (score)
+    User ->>+score: J'aimerais avoir mon score
+    score ->>+redis: J'aimerais avoir le score de cet utilisateur
+    redis ->>-score: Bien sûr, le voici
+    score ->>- User: Voici ton score

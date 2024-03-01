@@ -1,0 +1,19 @@
+sequenceDiagram
+    actor User
+    participant haproxy
+    box motus app 
+    participant Motus 
+    participant mots
+    end
+    mots ->> mots: génère le mot du jour
+    User->>+haproxy: Je veux jouer à Motus
+    haproxy->>-User: Voici un serveur Motus disponible
+    User->>+Motus: Voici mon guess
+    Motus ->>+ mots: Voici son guess
+    alt bonne reponse
+        mots ->> redis: ajoute une bonne réponse pour cet utilisateur
+    else mauvaise reponse
+        mots->>redis: ajoute une tentative pour cet utilisateur
+    end
+    mots->>-Motus: Ces lettres là sont correctes
+    Motus->>-User:Voici les lettres correctement placées/mal placées
