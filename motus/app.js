@@ -5,6 +5,7 @@ const path = require('path')
 const os = require('os')
 const axios = require('axios')
 const session = require('express-session')
+const jwt = require('jsonwebtoken')
 const port = process.env.PORT || 3000
 
 app.set('view engine', 'ejs');
@@ -27,7 +28,7 @@ function padTo2Digits(num) {
 }
 
 async function updateDB(ip, request) {
-    await axios.post("http://haproxy:3007/setscore", {"ip": ip, "request": request})
+    await axios.post("http://haproxy:3007/setscore", {"email": ip, "request": request})
 }
 
 function formatDate(date) {
@@ -53,11 +54,16 @@ function getCache() {
     return cache
 }
 
-app.get('/', (req, res) => {
-    if(!req.session.user) {
-        res.redirect('/signup')
+app.get('/', async (req, res) => {
+    if(!req.session.code) {
+        res.redirect(`http://localhost:3010/authorize?client_id=motus_app&scope=openid.play&redirect_uri=${encodeURIComponent("http://localhost:3100/callback")}`)
     } else {
-        res.render('index')
+        const result = await axios.get(`http://haproxy:3010/token?code=${req.session.code}`)
+        const id_token = result.data
+        const decoded = jwt.verify(id_token, "sanpellegrino")
+        req.session.email = decoded.email
+        await req.session.save()
+        res.render('index', {email: decoded.email})
     }
 })
 
@@ -70,18 +76,32 @@ app.get('/health', (req, res) => {
     res.json({ status: 'OK' });
 })
 
+app.get('/callback', async (req, res) => {
+    req.session.code = req.query.code
+    await req.session.save()
+    res.redirect('/')
+})
+
+app.get('/logout', async (req, res) => {
+    req.session.code = null
+    req.session.email = null
+    await req.session.save()
+    res.redirect('/')
+})
+
 app.get('/score', async (req, res) => {
     try {
-        const result = await axios.post("http://haproxy:3007/getscore", {"ip": req.socket.remoteAddress})
+        console.log(req.session.email)
+        const result = await axios.post("http://haproxy:3007/getscore", {"email": req.session.email})
+        let average = 0
+        if(result.data.wordFinded !== 0) {
+            average = result.data.try / result.data.wordFinded
+        }
+        res.render('score', {score: average})
     } catch (error) {
         console.log(error)
         res.render('error', {erreur: 'Something went wrong with score'})
     }
-    let average = 0
-    if(result.data.wordFinded !== 0) {
-        average = result.data.try / result.data.wordFinded
-    }
-    res.render('score', {score: average})
 })
 
 app.get('/word' , async (req, res) => {
@@ -112,78 +132,17 @@ app.get('/word' , async (req, res) => {
     }
     if(finded) {
         try {
-            await updateDB(req.socket.remoteAddress, "add_finded")
+            await updateDB(req.session.email, "add_finded")
         } catch (error) {
             console.log(error)
         }
     }
     try {
-        await updateDB(req.socket.remoteAddress, "add_try")
+        await updateDB(req.session.email, "add_try")
     } catch (error) {
         console.log(error)
     }
     res.send(JSON.stringify({colors: colors}))
-})
-
-app.get('/signup', (req, res) => {
-    res.render('login')
-})
-
-app.get('/signin', (req, res) => {
-    res.render('signin')
-})
-
-app.get('/signup_process', async (req, res) => {
-    const email = req.query.email
-    const password = req.query.password
-    try {
-        const result = await axios.post("http://haproxy:3010/signup", {"email": email, "password": password})
-    } catch (error) {
-        console.log(error)
-        res.render('error', {erreur: 'Something went wrong with signup'})
-    }
-
-    if(result.data.state === "success") {
-        req.session.user = email
-        await req.session.save()
-        res.redirect('/')
-    } else {
-        res.render('error', {erreur: result.data.message})
-    }
-})
-
-app.get('/signin_process', async (req, res) => {
-    const email = req.query.email
-    const password = req.query.password
-    const password2 = req.query.password2
-    if(password !== password2) {
-        res.render('error', {erreur: "Les mots de passes sont différents"})
-    }
-
-    try {
-        const result = await axios.post("http://haproxy:3010/signin", {"email": email, "password": password})
-    } catch (error) {
-        console.log(error)
-        res.render('error', {erreur: 'Something went wrong with signin'})
-    }
-
-    if(result.data.state === "success") {
-        req.session.user = email
-        await req.session.save()
-        res.redirect('/')
-    } else {
-        res.render('error', {erreur: result.data.message})
-    }
-})
-
-app.get('/session', (req, res) => {
-    res.send(req.session)
-})
-
-app.get('/logout', async (req, res) => {
-    req.session.user = null
-    await req.session.save()
-    res.redirect('/')
 })
 
 app.get('/port', (req, res) => {

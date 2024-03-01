@@ -13,7 +13,7 @@ app.use(cors())
 app.post("/setscore", async (req, res) => {
     console.log(req.body)
     if(req.body.request === "add_try") {
-        let value = await client.get(req.body.ip)
+        let value = await client.get(req.body.email)
         if(value === null) {
             value = {"wordFinded": 0, "try": 0}
         } else {
@@ -21,10 +21,10 @@ app.post("/setscore", async (req, res) => {
         }
         value.try += 1
 
-        await client.set(req.body.ip, JSON.stringify(value))
-        res.send(`Success ${req.body.ip}`)
+        await client.set(req.body.email, JSON.stringify(value))
+        res.send(`Success ${req.body.email}`)
     } else if(req.body.request === "add_finded") {
-        let value = await client.get(req.body.ip)
+        let value = await client.get(req.body.email)
         if(value === null) {
             value = {"wordFinded": 0, "try": 0}
         } else {
@@ -32,16 +32,16 @@ app.post("/setscore", async (req, res) => {
         }
         value.wordFinded += 1
 
-        await client.set(req.body.ip, JSON.stringify(value))
-        res.send(`Success ${req.body.ip}`)
+        await client.set(req.body.email, JSON.stringify(value))
+        res.send(`Success ${req.body.email}`)
     } else {
         res.send(`Error bad request`)
     }
 })
 
 app.post("/getscore", async (req, res) => {
-    const ip = req.body.ip
-    let value = await client.get(ip)
+    const email = req.body.email
+    let value = await client.get(email)
     if(value === null) {
         value = JSON.stringify({"wordFinded": 0, "try": 0})
     }
