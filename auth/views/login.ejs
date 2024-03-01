@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<head>
+    <title>A simple login form</title>
+</head>
+<body>
+    <form id="login_form" action="/tryConnect" method="post" onsubmit="return checkSamePassword()">
+        <input type="text" name="login" label="login" id="login">
+        <br/>
+        <input type="password" name="password" label="password" id="password">
+        <br/>
+        <input type="password" name="confirm-password" label="confirm-password" id="confirm-password">
+        <br/>
+        <input type="submit" name="send" id="submit">
+    </form>
+    <a href="/register">Vous n'avez pas encore de compte? Cliquez là</a>
+    <script type="text/javascript">
+        function checkSamePassword(){
+            var login = $('#login').val()
+            var password = $("#password").val()
+            var confirm = $('#confirm-password').val()
+            if (password!=confirm){
+                //afficher mot de passe incorrect/ne correspond pas au second
+                console.log("mots de passe différents!")
+                return false
+            }
+            return true
+        }
+    </script>
+</body>
