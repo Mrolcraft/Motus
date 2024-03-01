@@ -71,12 +71,16 @@ app.get('/health', (req, res) => {
 })
 
 app.get('/score', async (req, res) => {
-    const result = await axios.post("http://haproxy:3007/getscore", {"ip": req.socket.remoteAddress})
+    try {
+        const result = await axios.post("http://haproxy:3007/getscore", {"ip": req.socket.remoteAddress})
+    } catch (error) {
+        console.log(error)
+        res.render('error', {erreur: 'Something went wrong with score'})
+    }
     let average = 0
     if(result.data.wordFinded !== 0) {
         average = result.data.try / result.data.wordFinded
     }
-    console.log(average)
     res.render('score', {score: average})
 })
 
@@ -107,9 +111,17 @@ app.get('/word' , async (req, res) => {
         }
     }
     if(finded) {
-        await updateDB(req.socket.remoteAddress, "add_finded")
+        try {
+            await updateDB(req.socket.remoteAddress, "add_finded")
+        } catch (error) {
+            console.log(error)
+        }
     }
-    await updateDB(req.socket.remoteAddress, "add_try")
+    try {
+        await updateDB(req.socket.remoteAddress, "add_try")
+    } catch (error) {
+        console.log(error)
+    }
     res.send(JSON.stringify({colors: colors}))
 })
 
@@ -124,8 +136,12 @@ app.get('/signin', (req, res) => {
 app.get('/signup_process', async (req, res) => {
     const email = req.query.email
     const password = req.query.password
-
-    const result = await axios.post("http://haproxy:3010/signup", {"email": email, "password": password})
+    try {
+        const result = await axios.post("http://haproxy:3010/signup", {"email": email, "password": password})
+    } catch (error) {
+        console.log(error)
+        res.render('error', {erreur: 'Something went wrong with signup'})
+    }
 
     if(result.data.state === "success") {
         req.session.user = email
@@ -144,7 +160,12 @@ app.get('/signin_process', async (req, res) => {
         res.render('error', {erreur: "Les mots de passes sont différents"})
     }
 
-    const result = await axios.post("http://haproxy:3010/signin", {"email": email, "password": password})
+    try {
+        const result = await axios.post("http://haproxy:3010/signin", {"email": email, "password": password})
+    } catch (error) {
+        console.log(error)
+        res.render('error', {erreur: 'Something went wrong with signin'})
+    }
 
     if(result.data.state === "success") {
         req.session.user = email
