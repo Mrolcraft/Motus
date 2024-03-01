@@ -17,7 +17,7 @@ function padTo2Digits(num) {
 }
 
 async function updateDB(ip, request) {
-    await axios.post("http://score:3007/setscore", {"ip": ip, "request": request})
+    await axios.post("http://haproxy:3007/setscore", {"ip": ip, "request": request})
 }
 
 function formatDate(date) {
@@ -57,7 +57,7 @@ app.get('/health', (req, res) => {
 })
 
 app.get('/score', async (req, res) => {
-    const result = await axios.post("http://score:3007/getscore", {"ip": req.socket.remoteAddress})
+    const result = await axios.post("http://haproxy:3007/getscore", {"ip": req.socket.remoteAddress})
     let average = 0
     if(result.data.wordFinded !== 0) {
         average = result.data.try / result.data.wordFinded

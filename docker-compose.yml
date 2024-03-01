@@ -32,20 +32,34 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-      
-  score:
+
+  score1:
     depends_on:
       - redis
     build:
       context: ./score-motus/.
       dockerfile: Dockerfile
-    container_name: "score"
+    container_name: "score1"
     ports:
-      - "3007:3007"
+      - "3008:3008"
     volumes:
-      - score_motus_data:/data
+      - score_motus_data1:/data
     environment:
-      - PORT=3007
+      - PORT=3008
+
+  score2:
+    depends_on:
+      - redis
+    build:
+      context: ./score-motus/.
+      dockerfile: Dockerfile
+    container_name: "score2"
+    ports:
+      - "3009:3009"
+    volumes:
+      - score_motus_data2:/data
+    environment:
+      - PORT=3009
   
   haproxy:
     depends_on:
@@ -54,13 +68,15 @@ services:
     build:
       context: ./haproxy/.
       dockerfile: Dockerfile
-    container_name: "haproxy-container"
+    container_name: "haproxy"
     ports:
       - "3100:3100"
+      - "3007:3007"
       - "9090:9090"
 
 volumes:
   motus_data1:
   motus_data2:
-  score_motus_data:
+  score_motus_data1:
+  score_motus_data2:
   redis_data:

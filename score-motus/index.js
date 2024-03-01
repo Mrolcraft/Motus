@@ -48,6 +48,10 @@ app.post("/getscore", async (req, res) => {
     res.send(value)
 })
 
+app.get('/health', (req, res) => {
+    res.json({ status: 'OK' });
+})
+
 app.listen(port, async () => {
     await client.connect()
     console.log(`Example app listening on port ${port}`)
