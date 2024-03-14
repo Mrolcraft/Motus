@@ -56,7 +56,7 @@ function getCache() {
 
 app.get('/', async (req, res) => {
     if(!req.session.code) {
-        res.redirect(`http://localhost:3010/authorize?client_id=motus_app&scope=openid.play&redirect_uri=${encodeURIComponent("http://localhost:3100/callback")}`)
+        res.redirect(`http://localhost:3010/authorize?client_id=motus_app&scope=openid.play&redirect_uri=${encodeURIComponent("http://localhost:3101/callback")}`)
     } else {
         const result = await axios.get(`http://haproxy:3010/token?code=${req.session.code}`)
         const id_token = result.data

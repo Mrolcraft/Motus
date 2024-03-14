@@ -8,7 +8,19 @@ const path = require('path')
 const { v4: uuidv4 } = require('uuid')
 const session = require('express-session')
 const jwt = require('jsonwebtoken')
+const loki_url = process.env.LOKI || "http://localhost:3100";
+const {createLogger, transports} = require('winston')
+const LokiTransport = require('winston-loki');
+console.log(loki_url)
+const options = {
+    transports: [
+        new LokiTransport({
+            host: loki_url
+        })
+    ]
+};
 
+const logger = createLogger(options)
 
 const client = redis.createClient({url: "redis://redis_auth:6379"})
 
@@ -38,8 +50,10 @@ app.get('/authorize', async (req, res) => {
     const client_id = req.query.client_id
     const scope = req.query.scope
     const redirect_uri = req.query.redirect_uri
+    logger.info({ message: 'New authorize session ', labels: { 'url': req.url, 'client_id':client_id, 'scope': scope, 'redirect_uri': redirect_uri } })
 
     if(!client_id || !scope || !redirect_uri) {
+        logger.error({ message: 'Error while autorizing ', labels: { 'url': req.url, 'client_id':client_id, 'scope': scope, 'redirect_uri': redirect_uri }})
         res.render('error', {erreur: "Bad request"})
     }
 
@@ -47,7 +61,6 @@ app.get('/authorize', async (req, res) => {
     req.session.scope = scope
     req.session.redirect_uri = redirect_uri
     await req.session.save()
-    console.log(req.session)
     res.render('login')
 })
 
@@ -58,11 +71,13 @@ app.get('/signin', (req, res) => {
 app.get('/authorize_process', async (req, res) => {
     const email = req.query.email
     const password = req.query.password
+    logger.info({ message: 'Authorizing ', labels: { 'url': req.url, 'email':email }})
     try {
         const exist = await client.get(email)
 
         if(exist === null) {
             res.send(JSON.stringify({state: 'error', message: 'This email or password is wrong.'}))
+            logger.error({ message: 'Not Authorized ', labels: { 'url': req.url, 'email':email}})
         } else {
             const hash = crypto.createHash("sha256").update(password).digest("hex")
             if(exist === hash) {
@@ -70,6 +85,15 @@ app.get('/authorize_process', async (req, res) => {
                 let redirect_uri = req.session.redirect_uri + `?code=${code}`
                 console.log(redirect_uri)
                 await client.set(code, JSON.stringify({email: email}))
+                logger.info({ message: 'Authorized ', labels: { 'url': req.url, 'email':email }})
+                let logs = await client.get('num_log_process')
+                if(logs === null) {
+                    logs = 1
+                } else {
+                    logs = parseInt(logs) + 1
+                }
+                await client.set('num_log_process', logs)
+
                 res.redirect(redirect_uri)
             } else {
                 res.render('error',{erreur: 'This email or password is wrong.'})
@@ -77,20 +101,23 @@ app.get('/authorize_process', async (req, res) => {
         }
     } catch (error) {
         console.log(error)
+        logger.error({ message: 'Error while authorizing process ', labels: { 'url': req.url, 'email':email, 'error': error}})
         res.render('error', {erreur: 'Something went wrong with signup'})
     }
 })
 
 app.get('/token', async (req, res) => {
     const code = req.query.code
-
+    logger.info({message:"Token request ", labels:{'token':code}})
     if(!code) {
         res.render('error', {erreur: "No code provided"})
+        logger.error({message:"Token request without code "})
     }
 
     const data = await client.get(code)
 
     if(!data) {
+        logger.error({message:"Token request with bad code ", labels:{'code':code}})
         res.render('error', {erreur: "This code is wrong"})
     }
 
@@ -99,10 +126,20 @@ app.get('/token', async (req, res) => {
     res.send(token)
 })
 
+app.get('/metrics', async (req, res) => {
+    let logs = await client.get('num_log_process')
+    if(logs === null) {
+        logs = 0
+    }
+
+    res.send(`num_log_process ${logs}`)
+})
+
 app.get('/signin_process', async (req, res) => {
     const email = req.query.email
     const password = req.query.password
     const password2 = req.query.password2
+    logger.info({message:"Signin process ", labels:{'email':email}})
     if(password !== password2) {
         res.render('error', {erreur: "Les mots de passes sont différents"})
     }
@@ -116,13 +153,16 @@ app.get('/signin_process', async (req, res) => {
             const hash = crypto.createHash("sha256").update(password).digest("hex")
             try {
                 await client.set(email, hash)
+                logger.info({message:"Signin process successfull ", labels:{'email': email}})
                 res.redirect('/authorize')
             } catch(error) {
+                logger.error({message:"Signin process error ", labels:{'error':error}})
                 res.render('error', {erreur: 'An error occured during creation of a new user.'})
             }
         }
     } catch (error) {
         console.log(error)
+        logger.error({message:"Signin process error ", labels:{'error':error}})
         res.render('error', {erreur: 'Something went wrong with signin'})
     }
 
@@ -139,11 +179,6 @@ app.get('/session', (req, res) => {
     res.send(req.session)
 })
 
-app.get('/sessionset', (req, res) => {
-    req.session.test = "simon"
-    res.send(req.session)
-})
-
 app.get('/logout', async (req, res) => {
     req.session.user = null
     await req.session.save()
@@ -156,5 +191,6 @@ app.get('/health', (req, res) => {
 
 app.listen(port, async () => {
     await client.connect()
+    logger.info({message:"Auth application run on port "+port, labels:{'app': 'auth'}})
     console.log(`Example app listening on port ${port}`)
 })
