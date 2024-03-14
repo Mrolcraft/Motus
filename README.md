@@ -81,6 +81,11 @@ Pour la suite tout est connecté au même haproxy pour la gestion des loadbalanc
 
 Aucune instance n'est connectée directement à un autre mais toutes les connexions passent par le haproxy pour s'assure du loadbalancing et de la redondance des microservices.
 
+Pour accéder à chaque service:
+
+- http://localhost:3101 => Pour accéder à l'application
+- http://localhost:3000 => Pour accéder à Grafana
+
 ## A améliorer:
 
 - Ajouter des logs dans tous les microservices & dans metrics spécialisées (ici uniquement le nombre de connexion avec succès)
