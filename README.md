@@ -1,5 +1,4 @@
-## Microservices
-TD/projet de microservices
+## Motus
 Projet réalisé par :
 - Florian Castanet : castanet.flr@gmail.com
 - Thomas Laborde : labordetho@cy-tech.fr
