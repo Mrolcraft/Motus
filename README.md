@@ -17,6 +17,14 @@ Projet réalisé par :
 
 ## Pour lancer l'application:
 
+1. Se rendre dans chaque dossier et faire (pour installer toutes les dépendances de chaque service):
+
+````sh
+npm install
+````
+
+2. Lancer l'application via docker:
+
 ```sh
 sudo docker-compose up
 ```
