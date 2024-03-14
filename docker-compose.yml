@@ -81,7 +81,7 @@ services:
     volumes:
       - motus_auth1:/data
     environment:
-      - LOKI=http://loki:3100
+      - LOKI=http://haproxy:3015
       - PORT=3011
   
   auth2:
@@ -96,7 +96,7 @@ services:
     volumes:
       - motus_auth2:/data
     environment:
-      - LOKI=http://loki:3100
+      - LOKI=http://haproxy:3015
       - PORT=3012
 
 
@@ -157,9 +157,6 @@ services:
       - 9090
     ports:
       - 9090:9090
-
-networks:
-  monitor-net:
 
 volumes:
   motus_data1:

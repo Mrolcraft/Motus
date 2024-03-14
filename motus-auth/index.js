@@ -64,6 +64,10 @@ app.get('/authorize', async (req, res) => {
     res.render('login')
 })
 
+app.get('/login', async (req, res) => {
+    res.render('login')
+})
+
 app.get('/signin', (req, res) => {
     res.render('signin')
 })
@@ -154,7 +158,7 @@ app.get('/signin_process', async (req, res) => {
             try {
                 await client.set(email, hash)
                 logger.info({message:"Signin process successfull ", labels:{'email': email}})
-                res.redirect('/authorize')
+                res.redirect(`/authorize?client_id=${req.session.client_id}&scope=${req.session.scope}&redirect_uri=${encodeURIComponent(req.session.redirect_uri)}`)
             } catch(error) {
                 logger.error({message:"Signin process error ", labels:{'error':error}})
                 res.render('error', {erreur: 'An error occured during creation of a new user.'})
@@ -164,14 +168,6 @@ app.get('/signin_process', async (req, res) => {
         console.log(error)
         logger.error({message:"Signin process error ", labels:{'error':error}})
         res.render('error', {erreur: 'Something went wrong with signin'})
-    }
-
-    if(result.data.state === "success") {
-        req.session.user = email
-        await req.session.save()
-        res.redirect('/')
-    } else {
-        res.render('error', {erreur: result.data.message})
     }
 })
 
