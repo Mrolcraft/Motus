@@ -1,0 +1,16 @@
+sequenceDiagram
+    Utilisateur->>+Motus_App: 1. Veut jouer au jeu
+    Motus_App->>+Utilisateur: 2. redirige vers motus_auth/authorize
+    Utilisateur->>+Motus_Auth: 2. /authorize 
+    Motus_Auth->>+Motus_Auth: 3. login/password
+    Motus_Auth->>+Redis: Récupération infos de connexion
+    Redis->>+Motus_Auth: 
+    Motus_Auth->>+Motus_Auth: Vérification infos connexion
+    Motus_Auth->>+Redis: Stockage code avec datas demandées 
+    Motus_Auth->>+Utilisateur: 4. Motus_App/callback
+    Utilisateur->>+Motus_App: 4./callback
+    Motus_App->>+Motus_Auth: 5. /token
+    Motus_Auth->>+Redis: Récupération des datas
+    Redis->>+Motus_Auth: 
+    Motus_Auth->>+Motus_App: 6. datas (JWT)
+    Motus_App->>+Utilisateur: 7. Page du jeu
